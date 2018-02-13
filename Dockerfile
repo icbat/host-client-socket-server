@@ -4,7 +4,6 @@ WORKDIR /usr/src/app
 
 # Copy our dependency lists
 COPY package*.json ./
-COPY npm-shrinkwrap.json ./
 
 RUN npm install
 
