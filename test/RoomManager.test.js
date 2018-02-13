@@ -2,22 +2,34 @@ const test = require('ava');
 
 const RoomManager = require('../RoomManager');
 
-test('creating room opens joinable room', t => {
+let testObject;
+test.beforeEach(t => {
+	testObject = new RoomManager();
+});
+
+test('creating room joins the creator to it', t => {
 	const expectedClient = 'fake client it is ok';
-	const testObject = new RoomManager();
 
-	const newRoomCode = testObject.createNewRoom();
-	t.truthy(newRoomCode, 'precheck - room code was no good');
-	t.is(testObject.rooms[newRoomCode].length, 0);
-
-	const result = testObject.joinRoom({text: newRoomCode}, expectedClient);
+	const newRoomCode = testObject.createNewRoom({text: 'unused message'}, expectedClient);
 	t.is(testObject.rooms[newRoomCode].length, 1);
 	t.is(testObject.rooms[newRoomCode][0], expectedClient);
+});
+
+test('creating room opens joinable room', t => {
+	const creatorClient = 'first!3121!!';
+	const joinerClient = 'some friendo';
+
+	const newRoomCode = testObject.createNewRoom({}, creatorClient);
+	t.truthy(newRoomCode, 'precheck - no room code given');
+
+	const result = testObject.joinRoom({text: newRoomCode}, joinerClient);
+
+	t.is(testObject.rooms[newRoomCode].length, 2);
+	t.is(testObject.rooms[newRoomCode][1], joinerClient);
 	t.true(result, 'response message should be boolean true');
 });
 
 test('joining a non-existent room fails', t => {
-	const testObject = new RoomManager();
 	const nonExistentRoom = 'Wilkommen';
 	t.false(nonExistentRoom in testObject.rooms, 'precheck - room exists');
 

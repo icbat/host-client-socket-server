@@ -6,7 +6,7 @@ class RoomManager {
     createNewRoom(message, client) {
         const roomName = 'asdf';
         console.log('Creating new room called', roomName);
-        this.rooms[roomName] = [];
+        this.rooms[roomName] = [client];
         console.log('Rooms now', this.rooms);
         return roomName;
     }
