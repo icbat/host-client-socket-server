@@ -12,7 +12,7 @@ test.beforeEach(t => {
 test('creating room joins the creator to it', t => {
 	const expectedClient = 'fake client it is ok';
 
-	const response = testObject.createNewRoom({text: 'unused message'}, expectedClient);
+	const response = testObject.createNewRoom({message: 'unused message'}, expectedClient);
 	const newRoomCode = response.room;
 	t.is(testObject.rooms[newRoomCode].length, 1);
 	t.is(testObject.rooms[newRoomCode][0], expectedClient);
@@ -25,8 +25,9 @@ test('creating room opens joinable room', t => {
 	const response = testObject.createNewRoom({}, creatorClient);
 	const newRoomCode = response.room;
 	t.truthy(newRoomCode, 'precheck - no room code given');
+	t.is(testObject.rooms[newRoomCode].length, 1);
 
-	const result = testObject.joinRoom({text: newRoomCode}, joinerClient);
+	const result = testObject.joinRoom({room: newRoomCode}, joinerClient);
 
 	t.is(testObject.rooms[newRoomCode].length, 2);
 	t.is(testObject.rooms[newRoomCode][1], joinerClient);
@@ -36,16 +37,16 @@ test('joining a non-existent room fails', t => {
 	const nonExistentRoom = 'Wilkommen';
 	t.false(nonExistentRoom in testObject.rooms, 'precheck - room exists');
 
-	const result = testObject.joinRoom({text: nonExistentRoom});
+	const result = testObject.joinRoom({room: nonExistentRoom});
 
 	t.true(Object.keys(testObject.rooms).length === 0, 'there should not be a room');
 });
 
 test('sending message to a non-existent room fails gracefully', t => {
 	const testFunction = () => {
-		const newRoomCode = testObject.createNewRoom({text: 'unused message'}, spiedClient('a message for no one'));
+		const newRoomCode = testObject.createNewRoom({message: 'unused message'}, spiedClient('a message for no one'));
 
-		testObject.sendMessageToRoom({room: newRoomCode, text: 'room scanning spam'});
+		testObject.sendMessageToRoom({room: newRoomCode, message: 'room scanning spam'});
 	}
 	t.notThrows(testFunction);
 });
@@ -58,8 +59,8 @@ test('sending message to room you are not in fails gracefully', t => {
 
 	const testFunction = () => {
 		const newRoomCode = testObject.createNewRoom({}, creatorClient);
-		testObject.joinRoom({room: newRoomCode, text: unexpectedMessage}, joinedClient);
-		testObject.sendMessageToRoom({room: newRoomCode, text: unexpectedMessage}, senderClient);
+		testObject.joinRoom({room: newRoomCode, message: unexpectedMessage}, joinedClient);
+		testObject.sendMessageToRoom({room: newRoomCode, message: unexpectedMessage}, senderClient);
 	}
 	t.notThrows(testFunction);
 	t.false(creatorClient.sent);
@@ -72,11 +73,11 @@ test('sending message to a room sends to all folks in that room', t => {
 	const creatorClient = spiedClient(expectedMessage);
 	const senderClient = spiedClient(expectedMessage);
 
-	const response = testObject.createNewRoom({text: 'unused message'}, creatorClient);
+	const response = testObject.createNewRoom({message: 'unused message'}, creatorClient);
 	const newRoomCode = response.room;
-	testObject.joinRoom({text: newRoomCode}, senderClient);
+	testObject.joinRoom({room: newRoomCode}, senderClient);
 
-	testObject.sendMessageToRoom({room: newRoomCode, text: expectedMessage}, senderClient);
+	testObject.sendMessageToRoom({room: newRoomCode, message: expectedMessage}, senderClient);
 
 	t.true(creatorClient.sent);
 	t.true(senderClient.sent);
@@ -86,7 +87,8 @@ const spiedClient = expectedMessage => {
 	return {
 		sent: false,
 		send: function(response) {
-			if (response.message === expectedMessage) {
+			console.log('sending to fake socket', response);
+			if (JSON.parse(response).message === expectedMessage) {
 				this.sent = true;
 			}
 		}
