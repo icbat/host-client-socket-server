@@ -37,3 +37,54 @@ test('joining a non-existent room fails', t => {
 
 	t.false(result, 'we were allowed to join a room that does not exist');
 });
+
+test('sending message to a non-existent room fails gracefully', t => {
+	const testFunction = () => {
+		const newRoomCode = testObject.createNewRoom({text: 'unused message'}, spiedClient('a message for no one'));
+
+		testObject.sendMessageToRoom({room: newRoomCode, text: 'room scanning spam'});
+	}
+	t.notThrows(testFunction);
+});
+
+test('sending message to room you are not in fails gracefully', t => {
+	const unexpectedMessage = 'some rando spam';
+	const creatorClient = spiedClient(unexpectedMessage);
+	const joinedClient = spiedClient(unexpectedMessage);
+	const senderClient = spiedClient(unexpectedMessage);
+
+	const testFunction = () => {
+		const newRoomCode = testObject.createNewRoom({}, creatorClient);
+		testObject.joinRoom({room: newRoomCode, text: unexpectedMessage}, joinedClient);
+		testObject.sendMessageToRoom({room: newRoomCode, text: unexpectedMessage}, senderClient);
+	}
+	t.notThrows(testFunction);
+	t.false(creatorClient.sent);
+	t.false(joinedClient.sent);
+	t.false(senderClient.sent);
+});
+
+test('sending message to a room sends to all folks in that room', t => {
+	const expectedMessage = 'super secret my dude';
+	const creatorClient = spiedClient(expectedMessage);
+	const senderClient = spiedClient(expectedMessage);
+
+	const newRoomCode = testObject.createNewRoom({text: 'unused message'}, creatorClient);
+	testObject.joinRoom({text: newRoomCode}, senderClient);
+
+	testObject.sendMessageToRoom({room: newRoomCode, text: expectedMessage}, senderClient);
+
+	t.true(creatorClient.sent);
+	t.true(senderClient.sent);
+});
+
+const spiedClient = expectedMessage => {
+	return {
+		sent: false,
+		send: function(message) {
+			if (message === expectedMessage) {
+				this.sent = true;
+			}
+		}
+	};
+}
