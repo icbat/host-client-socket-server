@@ -3,18 +3,25 @@ class RoomManager {
         this.rooms = {};
     }
 
-    createNewRoom(message) {
+    createNewRoom(message, client) {
         const roomName = 'asdf';
         console.log('Creating new room called', roomName);
         this.rooms[roomName] = [];
         console.log('Rooms now', this.rooms);
         return roomName;
     }
-    joinRoom(message) {
+
+    joinRoom(message, client) {
         console.log('Joining a room given', message);
-        return message in this.rooms;
+        const roomName = message.text;
+        if (roomName in this.rooms) {
+            this.rooms[roomName].push(client);
+            return true;
+        }
+        return false;
     }
-    sendMessageToRoom(message) {
+
+    sendMessageToRoom(message, client) {
         console.log('Sending message to your room', message);
     }
 }
