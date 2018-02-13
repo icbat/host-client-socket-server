@@ -1,0 +1,19 @@
+{
+  "name": "host-client-socket-server",
+  "version": "1.0.0",
+  "description": "A server for multiplayer games",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/icbat/host-client-socket-server.git"
+  },
+  "author": "Evan Cobb",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/icbat/host-client-socket-server/issues"
+  },
+  "homepage": "https://github.com/icbat/host-client-socket-server#readme"
+}
