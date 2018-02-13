@@ -6,7 +6,7 @@ console.log('Socker server running on port', port);
 const RoomManager = require('./RoomManager');
 const roomManager = new RoomManager();
 
-server.on('connection', connection => {
+server.on('connection', client => {
 
     console.log('Someone connected', client);
     client.on('message', rawMessage => {
@@ -18,7 +18,9 @@ server.on('connection', connection => {
             return;
         }
         if (message.type in roomManager) {
-            roomManager[message.type](message, client);
+            const response = roomManager[message.type](message, client);
+            console.log('Successfully handled', message, 'responding with', response);
+            client.send(JSON.stringify(response));
         } else {
             console.error('Unexpected message type', message.type);
             return;

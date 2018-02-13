@@ -7,10 +7,13 @@ test.beforeEach(t => {
 	testObject = new RoomManager();
 });
 
+// TODO add tests for response contract
+
 test('creating room joins the creator to it', t => {
 	const expectedClient = 'fake client it is ok';
 
-	const newRoomCode = testObject.createNewRoom({text: 'unused message'}, expectedClient);
+	const response = testObject.createNewRoom({text: 'unused message'}, expectedClient);
+	const newRoomCode = response.room;
 	t.is(testObject.rooms[newRoomCode].length, 1);
 	t.is(testObject.rooms[newRoomCode][0], expectedClient);
 });
@@ -19,14 +22,14 @@ test('creating room opens joinable room', t => {
 	const creatorClient = 'first!3121!!';
 	const joinerClient = 'some friendo';
 
-	const newRoomCode = testObject.createNewRoom({}, creatorClient);
+	const response = testObject.createNewRoom({}, creatorClient);
+	const newRoomCode = response.room;
 	t.truthy(newRoomCode, 'precheck - no room code given');
 
 	const result = testObject.joinRoom({text: newRoomCode}, joinerClient);
 
 	t.is(testObject.rooms[newRoomCode].length, 2);
 	t.is(testObject.rooms[newRoomCode][1], joinerClient);
-	t.true(result, 'response message should be boolean true');
 });
 
 test('joining a non-existent room fails', t => {
@@ -35,7 +38,7 @@ test('joining a non-existent room fails', t => {
 
 	const result = testObject.joinRoom({text: nonExistentRoom});
 
-	t.false(result, 'we were allowed to join a room that does not exist');
+	t.true(Object.keys(testObject.rooms).length === 0, 'there should not be a room');
 });
 
 test('sending message to a non-existent room fails gracefully', t => {
@@ -69,7 +72,8 @@ test('sending message to a room sends to all folks in that room', t => {
 	const creatorClient = spiedClient(expectedMessage);
 	const senderClient = spiedClient(expectedMessage);
 
-	const newRoomCode = testObject.createNewRoom({text: 'unused message'}, creatorClient);
+	const response = testObject.createNewRoom({text: 'unused message'}, creatorClient);
+	const newRoomCode = response.room;
 	testObject.joinRoom({text: newRoomCode}, senderClient);
 
 	testObject.sendMessageToRoom({room: newRoomCode, text: expectedMessage}, senderClient);
@@ -81,8 +85,8 @@ test('sending message to a room sends to all folks in that room', t => {
 const spiedClient = expectedMessage => {
 	return {
 		sent: false,
-		send: function(message) {
-			if (message === expectedMessage) {
+		send: function(response) {
+			if (response.message === expectedMessage) {
 				this.sent = true;
 			}
 		}

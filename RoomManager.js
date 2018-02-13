@@ -8,7 +8,7 @@ class RoomManager {
         console.log('Creating new room called', roomName);
         this.rooms[roomName] = [client];
         console.log('Rooms now', this.rooms);
-        return roomName;
+        return buildResponse(true, roomName, 'Created');
     }
 
     joinRoom(message, client) {
@@ -16,9 +16,10 @@ class RoomManager {
         const roomName = message.text;
         if (roomName in this.rooms) {
             this.rooms[roomName].push(client);
-            return true;
+            return buildResponse(true, roomName, 'Joined');
         }
-        return false;
+        // TODO put a cap on room size
+        return buildResponse(false, roomName, 'No room found');
     }
 
     sendMessageToRoom(message, client) {
@@ -27,19 +28,30 @@ class RoomManager {
         const roomName = message.room;
         if (!(roomName in this.rooms)) {
             console.warn('Someone tried to send to room that does not exist', message, client);
-            return false;
+            return buildResponse(false, roomName, 'No room found');
         }
 
         const room = this.rooms[roomName];
         if (room.indexOf(client) === -1) {
             console.warn('Someone tried to send to a room they are not a member of', message, client);
-            return false;
+            return buildResponse(false, roomName, 'You are not a member');
         }
 
         for (const member of room) {
-            member.send(message.text);
+            // TODO should you broadcast to yourself, or check for that?
+            member.send(buildResponse(true, roomName, message.text));
         }
+        console.log('message sent');
+        return buildResponse(true, roomName, 'Message sent');
     }
 }
+
+const buildResponse = (success, roomName, message) => {
+    return {
+        success: success,
+        room: roomName,
+        message: message,
+    };
+};
 
 module.exports = RoomManager;
