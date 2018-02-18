@@ -17,6 +17,7 @@ server.on('connection', client => {
             console.error('Sent not-JSON wut do');
             return;
         }
+
         if (message.type in roomManager) {
             const response = roomManager[message.type](message, client);
             console.log('Successfully handled', message, 'responding with', response);
@@ -25,5 +26,10 @@ server.on('connection', client => {
             console.error('Unexpected message type', message.type);
             return;
         }
+    });
+
+    client.on('close', () => {
+        console.log('client disconnected', client);
+        roomManager.clientDisconnected(client);
     });
 });
