@@ -63,9 +63,9 @@ test('sending message to room you are not in fails gracefully', t => {
 		testObject.sendMessageToRoom({room: newRoomCode, message: unexpectedMessage}, senderClient);
 	}
 	t.notThrows(testFunction);
-	t.false(creatorClient.sent);
-	t.false(joinedClient.sent);
-	t.false(senderClient.sent);
+	t.is(creatorClient.sent, undefined);
+	t.is(joinedClient.sent, undefined);
+	t.is(senderClient.sent, undefined);
 });
 
 test('sending message to a room sends to all folks in that room', t => {
@@ -79,18 +79,86 @@ test('sending message to a room sends to all folks in that room', t => {
 
 	testObject.sendMessageToRoom({room: newRoomCode, message: expectedMessage}, senderClient);
 
-	t.true(creatorClient.sent);
-	t.true(senderClient.sent);
+	t.is(creatorClient.sent, expectedMessage);
+	t.is(senderClient.sent, expectedMessage);
+});
+
+test('a host disconnecting kills the room', t => {
+	const creatorClient = spiedClient();
+
+	const response = testObject.createNewRoom({message: 'unused message'}, creatorClient);
+	const newRoomCode = response.room;
+	t.true(newRoomCode in testObject.rooms, 'precondition');
+
+	testObject.clientDisconnected(creatorClient);
+
+	t.false(newRoomCode in testObject.rooms);
+});
+
+test('a non-host disconnecting does not kill the room', t => {
+	const creatorClient = spiedClient();
+	const joinerClient = spiedClient();
+
+	const response = testObject.createNewRoom({message: 'unused message'}, creatorClient);
+	const newRoomCode = response.room;
+	t.true(newRoomCode in testObject.rooms, 'precondition');
+	testObject.joinRoom({room: newRoomCode}, joinerClient);
+
+	testObject.clientDisconnected(joinerClient);
+
+	t.true(newRoomCode in testObject.rooms);
+});
+
+test('a non-host disconnecting prevents future broadcasts from going to them', t => {
+	const expectedMessage = 'Hello fellow children';
+	const creatorClient = spiedClient(expectedMessage);
+	const joinerClient = spiedClient(expectedMessage);
+
+	const response = testObject.createNewRoom({message: 'unused message'}, creatorClient);
+	const newRoomCode = response.room;
+	testObject.joinRoom({room: newRoomCode}, joinerClient);
+	testObject.clientDisconnected(joinerClient);
+	testObject.sendMessageToRoom({room: newRoomCode, message: expectedMessage}, creatorClient);
+
+	t.is(creatorClient.sent, expectedMessage);
+	t.is(joinerClient.sent, undefined);
+});
+
+test('a room being ended notifies all clients first', t => {
+	const expectedMessage = 'Room ended';
+	const creatorClient = spiedClient(expectedMessage);
+	const joinerClient = spiedClient(expectedMessage);
+
+	const response = testObject.createNewRoom({message: 'unused message'}, creatorClient);
+	const newRoomCode = response.room;
+	testObject.joinRoom({room: newRoomCode}, joinerClient);
+
+	testObject.clientDisconnected(creatorClient);
+
+	t.is(creatorClient.sent, expectedMessage);
+	t.is(joinerClient.sent, expectedMessage);
+});
+
+test('a room being ended removes all associated clients from the map', t => {
+	const creatorClient = spiedClient();
+	const joinerClient = spiedClient();
+
+	const response = testObject.createNewRoom({message: 'unused message'}, creatorClient);
+	const newRoomCode = response.room;
+	testObject.joinRoom({room: newRoomCode}, joinerClient);
+	t.is(testObject.clients.size, 2);
+
+	testObject.clientDisconnected(creatorClient);
+
+	t.is(testObject.clients.size, 0);
 });
 
 const spiedClient = expectedMessage => {
 	return {
-		sent: false,
+		sent: undefined,
 		send: function(response) {
 			console.log('sending to fake socket', response);
-			if (JSON.parse(response).message === expectedMessage) {
-				this.sent = true;
-			}
+			this.sent = JSON.parse(response).message;
 		}
 	};
 }
