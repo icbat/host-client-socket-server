@@ -3,7 +3,7 @@ const port = process.env.PORT || 3000;
 const server = new WebSocketServer({port: port});
 console.log('Socker server running on port', port);
 
-const RoomManager = require('./RoomManager');
+const RoomManager = require('./lib/RoomManager');
 const roomManager = new RoomManager();
 
 server.on('connection', client => {

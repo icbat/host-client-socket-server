@@ -1,6 +1,6 @@
 const test = require('ava');
 
-const RoomManager = require('../RoomManager');
+const RoomManager = require('../lib/RoomManager');
 
 let testObject;
 test.beforeEach(t => {
